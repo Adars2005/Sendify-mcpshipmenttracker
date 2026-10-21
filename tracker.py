@@ -418,7 +418,7 @@ def lookup_shipment(reference_number: str) -> ShipmentResult:
             source_url=tracking_url(reference),
         )
     except SourceLayoutError as exc:
-        logger.warning("Unmapped tracking response for reference %s: %s", reference, exc)
+        logger.warning("Unmapped tracking response (%s)", type(exc).__name__)
         return ShipmentResult(
             reference_number=reference,
             status="source_error",
@@ -426,8 +426,10 @@ def lookup_shipment(reference_number: str) -> ShipmentResult:
             warnings=[str(exc)],
             source_url=tracking_url(reference),
         )
-    except Exception:
-        logger.exception("Shipment lookup failed for reference %s", reference)
+    except Exception as exc:
+        # Shipment references can be sensitive. Keep them and upstream details
+        # out of logs, including exception messages that may contain URLs/data.
+        logger.error("Shipment lookup failed (%s)", type(exc).__name__)
         return ShipmentResult(
             reference_number=reference,
             status="source_error",
